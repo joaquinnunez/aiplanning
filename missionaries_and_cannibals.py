@@ -1,3 +1,17 @@
+"""
+Toy Problem: Missionaries and Cannibals. (Week1)
+
+On one bank of a river are three missionaries and three cannibals.
+There is one boat available that can hold up to two people and that
+they would like to use to cross the river.
+If the cannibals ever outnumber the missionaries on either of the river's
+banks, the missionaries will get eaten.
+How can the boat be used to safely carry all the missionaries and cannibals
+across the river?
+Problem: find a sequence of action that brings about another state
+"""
+
+
 class Node(object):
     def __init__(self, current, next):
         if current.river_side == "L":
@@ -94,19 +108,7 @@ def expand(node):
 
 
 def tree_search(problem, strategy):
-    """ Find a solution to the given problem while expanding nodes according to the given strategy
-
-        Toy Problem: Missionaries and Cannibals.
-
-        On one bank of a river are three missionaries and three cannibals.
-        There is one boat available that can hold up to two people and that
-        they would like to use to cross the river.
-        If the cannibals ever outnumber the missionaries on either of the river's
-        banks, the missionaries will get eaten.
-        How can the boat be used to safely carry all the missionaries and cannibals
-        across the river?
-        Problem: find a sequence of action that brings about another state
-    """
+    """ Find a solution to the given problem while expanding nodes according to the given strategy """
 
     # fringe: set of known states; initially just initial state
 
