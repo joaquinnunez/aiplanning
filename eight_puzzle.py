@@ -9,12 +9,18 @@ Toy Problem: Sliding-Block Puzzle
 """
 
 import copy
-from pq import *
+import heapq
 
 LEFT = "l"
 RIGHT = "r"
 UP = "u"
 DOWN = "d"
+
+GOAL = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+GOAL_TILES = {}
+for j, row in enumerate(GOAL):
+    for i, val in enumerate(row):
+        GOAL_TILES[val] = (i, j)
 
 
 class Puzzle(object):
@@ -22,15 +28,16 @@ class Puzzle(object):
     def __init__(self, initial, last_move, n_moves):
         self.data = initial
         self.tiles = {}
+        self.compute_tiles_positions()
+        self.last_move = last_move
+        self.n_moves = n_moves
+
+    def compute_tiles_positions(self):
         for j, row in enumerate(self.data):
             for i, val in enumerate(row):
                 self.tiles[val] = (i, j)
                 if self.data[j][i] == 0:
                     self.x, self.y = i, j
-
-        self.goal = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
-        self.last_move = last_move
-        self.n_moves = n_moves
 
     def get_tile(self, x, y):
         return self.data[y][x]
@@ -56,13 +63,14 @@ class Puzzle(object):
         for j, row in enumerate(self.data):
             for i, val in enumerate(row):
                 # for each misplaced tile, we add 1, and the value of the manhattan distance
-                # and the current moves
-                if self.data[j][i] != self.goal[j][i]:
+                if self.data[j][i] != GOAL[j][i]:
                     value += 1
-                    md = abs(self.tiles[val][0] - i) + abs(self.tiles[val][1] - j)
-                    value += md
-                    value += self.n_moves
+                    # md = abs(self.tiles[val][0] - GOAL_TILES[val][0]) + abs(self.tiles[val][1] - GOAL_TILES[val][1])
+                    # value += md
         return value
+
+    def __lt__(self, other):
+        return self.heuristic() + self.n_moves < other.heuristic() + other.n_moves
 
     def can_move(self, to):
         return (to == LEFT and self.x > 0) or (to == RIGHT and self.x < 2) or (to == UP and self.y > 0) or (to == DOWN and self.y < 2)
@@ -102,6 +110,7 @@ class Action(object):
             raise Exception("Would you like to break the npuzzle?")
         npuzzle.last_move = to
         npuzzle.n_moves += 1
+        npuzzle.compute_tiles_positions()
         return npuzzle
 
 
@@ -112,10 +121,7 @@ def expand(puzzle):
     a = Action()
     for move_to in [LEFT, RIGHT, UP, DOWN]:
         if puzzle.last_move != previous[move_to] and puzzle.can_move(move_to):
-            # print("Can move to: {}".format(move_to))
             p = a.move(puzzle, move_to)
-            # print("Heuristic: {0}".format(p.heuristic()))
-            # print(p)
             states.append(p)
     return states
 
@@ -131,17 +137,21 @@ def path_to(came_from, current):
 if __name__ == "__main__":
     # initial = [[3, 2, 0], [4, 5, 7], [1, 8, 6]]
     initial = [[8, 1, 7], [4, 5, 6], [2, 0, 3]]
+    # initial = [[1, 6, 4], [8, 7, 0], [3, 2, 5]]
     node = Puzzle(initial, None, 0)
-
-    visited = []
+    graph_search = True
     came_from = {}
-    add_task(node, node.heuristic())
-    while True:
+    fringe = []
+
+    if graph_search:
+        memory = set()
+
+    heapq.heappush(fringe, node)
+    while fringe:
 
         # select node from heap priority queue the node will not be selected again
-        node = pop_task()
-        visited.append(node.id())
-        # print("current node:\n{0}".format(node))
+        node = heapq.heappop(fringe)
+        # print("Current node:\n{0}".format(node))
 
         # goal test before expansion: to avoid trick problem like "get from Arad to Arad"
         if node.goal_test():
@@ -150,8 +160,15 @@ if __name__ == "__main__":
             print(path_to(came_from, node.id()))
             break
 
+        if graph_search:
+            memory.add(node.id())
+
         # otherwise: add new nodes to the fringe and continue loop
+        # print("Successors:")
         for n in expand(node):
-            if n.id() not in visited:
+            if not graph_search or (graph_search and n.id() not in memory):
                 came_from[n.id()] = node.id()
-                add_task(n, priority=n.heuristic())
+                heapq.heappush(fringe, n)
+                # print("N:{0} - h:{1} - c:{2}".format(n.id(), n.heuristic(), n.n_moves))
+
+        # a = raw_input()
